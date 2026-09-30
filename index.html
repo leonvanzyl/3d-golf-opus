@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2b1d4f" />
+    <meta name="description" content="Adventure Mini Golf — nine hand-built 3D mini golf holes with windmills, dinosaurs, portals and lava. Runs in your browser." />
+    <title>Adventure Mini Golf</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='26' fill='%2358c24a'/%3E%3Crect x='30' y='6' width='4' height='36' fill='%23fff'/%3E%3Cpath d='M34 6 L54 13 L34 20Z' fill='%23ff4b4b'/%3E%3Ccircle cx='24' cy='44' r='7' fill='%23fff'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas" tabindex="0"></canvas>
+
+      <!-- In-game HUD -->
+      <div id="hud" class="hidden">
+        <div class="hud-left">
+          <div class="hole-chip"><span class="hole-num" id="hud-hole">1</span></div>
+          <div class="hole-meta">
+            <div class="hole-name" id="hud-name">Sunny Meadow</div>
+            <div class="hole-par">Par <span id="hud-par">2</span> · <span id="hud-total">Total E</span></div>
+          </div>
+        </div>
+        <div class="hud-center">
+          <div class="stroke-label">Stroke</div>
+          <div class="stroke-count" id="hud-strokes">0</div>
+        </div>
+        <div class="hud-right">
+          <button class="icon-btn" id="btn-restart" title="Restart hole (R)" aria-label="Restart hole">
+            <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-view" title="Overview camera (V)" aria-label="Toggle overview camera">
+            <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-sound" title="Mute / unmute (M)" aria-label="Toggle sound">
+            <svg class="snd-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+            <svg class="snd-off" viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 8v2.2l2.5 2.5V12zM19 12a7 7 0 0 1-.6 2.8l1.5 1.5A9 9 0 0 0 14 3.2v2.1a7 7 0 0 1 5 6.7zM4.3 3 3 4.3 7.7 9H3v6h4l5 5v-6.7l4.3 4.3a7 7 0 0 1-2.3 1.2v2.1a9 9 0 0 0 3.7-1.9l2 2 1.3-1.3L4.3 3zM12 4 9.9 6.1 12 8.2V4z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-pause" title="Pause (Esc / P)" aria-label="Pause">
+            <svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="power" class="hidden">
+        <div class="power-track"><div class="power-fill" id="power-fill"></div></div>
+        <div class="power-text" id="power-text">0%</div>
+      </div>
+
+      <div id="hint" class="hidden"></div>
+      <div id="lockhint" class="hidden"><div class="lock-card">Click to play<small>Move the mouse to aim · click &amp; drag back to putt</small></div></div>
+
+      <div id="banner" class="hidden">
+        <div class="banner-hole" id="banner-hole">HOLE 1</div>
+        <div class="banner-name" id="banner-name">Sunny Meadow</div>
+        <div class="banner-par" id="banner-par">PAR 2</div>
+        <div class="banner-tip" id="banner-tip"></div>
+        <div class="banner-skip">Click or press Space to skip</div>
+      </div>
+
+      <div id="toast" class="hidden"></div>
+      <div id="celebrate" class="hidden"><div class="cel-word" id="cel-word"></div><div class="cel-sub" id="cel-sub"></div></div>
+
+      <!-- Main menu -->
+      <div id="menu" class="screen">
+        <div class="menu-card">
+          <div class="title">
+            <span class="t1">Adventure</span>
+            <span class="t2">Mini Golf</span>
+          </div>
+          <div class="subtitle">Nine wild holes · windmills · dinosaurs · portals · lava</div>
+          <div class="menu-buttons">
+            <button class="btn primary" id="btn-play">Play 9 Holes</button>
+            <button class="btn" id="btn-practice">Choose a Hole</button>
+            <button class="btn" id="btn-howto">How to Play</button>
+          </div>
+          <div class="menu-footer">
+            <div id="best-round">No best round yet</div>
+            <div class="menu-settings">
+              <label>Graphics
+                <select id="sel-quality">
+                  <option value="auto">Auto</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+              <button class="btn small" id="btn-menu-sound">Sound: On</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hole select -->
+      <div id="practice" class="screen hidden">
+        <div class="menu-card wide">
+          <h2 id="holes-title">Choose a Hole</h2>
+          <div class="holes-sub" id="holes-sub">Play any hole on its own — you can carry on to the next one afterwards.</div>
+          <div class="hole-grid" id="hole-grid"></div>
+          <button class="btn" id="btn-practice-back">Back</button>
+        </div>
+      </div>
+
+      <!-- How to play -->
+      <div id="howto" class="screen hidden">
+        <div class="menu-card wide">
+          <h2>How to Play</h2>
+          <div class="howto-grid">
+            <div><b>Aim</b><span>Move the mouse left / right (or A / D, ← / →).</span></div>
+            <div><b>Putt</b><span>Click and hold, drag the mouse back (toward you) to set power, release to putt. Drag forward again or right-click to cancel.</span></div>
+            <div><b>Look</b><span>Scroll to zoom. Press V to toggle an overview of the hole.</span></div>
+            <div><b>Rules</b><span>Water, lava and out of bounds cost one stroke and the ball returns to where you played from. Each hole is capped at 10 strokes.</span></div>
+            <div><b>Keys</b><span>R restart hole · M mute · Esc / P pause · Space skip flyover (or hold Space to charge a putt).</span></div>
+            <div><b>Holes</b><span>Pick any hole from “Choose a Hole” on the main menu, or pause mid-game and use “Jump to Hole…”.</span></div>
+            <div><b>Scores</b><span>Your best round and best score on each hole are saved in this browser.</span></div>
+          </div>
+          <button class="btn primary" id="btn-howto-back">Got it!</button>
+        </div>
+      </div>
+
+      <!-- Pause -->
+      <div id="pause" class="screen hidden">
+        <div class="menu-card">
+          <h2>Paused</h2>
+          <div class="menu-buttons">
+            <button class="btn primary" id="btn-resume">Resume</button>
+            <button class="btn" id="btn-pause-restart">Restart Hole</button>
+            <button class="btn" id="btn-pause-holes">Jump to Hole…</button>
+            <button class="btn" id="btn-pause-card">Scorecard</button>
+            <button class="btn" id="btn-pause-menu">Quit to Menu</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scorecard -->
+      <div id="scorecard" class="screen hidden">
+        <div class="menu-card wide">
+          <h2 id="sc-title">Scorecard</h2>
+          <div id="sc-summary" class="sc-summary"></div>
+          <div class="sc-table-wrap"><table id="sc-table"></table></div>
+          <div class="menu-buttons row" id="sc-buttons"></div>
+        </div>
+      </div>
+
+      <div id="loading" class="screen">
+        <div class="loader"><div class="loader-ball"></div><div>Building the course…</div></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

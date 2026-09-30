@@ -1,0 +1,19 @@
+{
+  "name": "adventure-mini-golf",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A polished 3D adventure mini golf game built with Vite and Three.js. All models, textures and sounds are generated in code.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "verify": "node tools/verify-holes.mjs"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1"
+  }
+}
